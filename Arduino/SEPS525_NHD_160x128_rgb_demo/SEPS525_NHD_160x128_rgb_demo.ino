@@ -1,6 +1,6 @@
 //--------------------------------------------------------------------------
 /*
-Annotated and updated by Martin Falatic
+SEPS525-based display demo code by Martin Falatic
 
 Portions (c)2014 Mike LaVine - Newhaven Display International, LLC. 
 http://www.newhavendisplay.com/NHD_forum/index.php/topic,64.0.html
@@ -21,27 +21,27 @@ http://www.newhavendisplay.com/NHD_forum/index.php/topic,64.0.html
 
 #include <SPI.h>
 
-#define MODE_3WIRE    1   // BS1=0, BS0 = 1
-#define MODE_4WIRE    2   // BS1=0, BS0 = 0, needs the RS (D/C) signal
-#define MODE_SPI4W    3   // BS1=0, BS0 = 0, needs the RS (D/C) signal
+#define MODE_3WIRE    1   // n/a for this device!
+#define MODE_4WIRE    2   // PS=0, needs the RS (D/C) signal
+#define MODE_SPI4W    3   // PS=0, needs the RS (D/C) signal
 
-#define SEND_CMD      1   // 3- and 4-wire - Display instruction (command)
-#define SEND_DAT      2   // 3- and 4-wire - Display instruction (data)
+#define SEND_CMD      1   // 4-wire - Display instruction (command)
+#define SEND_DAT      2   // 4-wire - Display instruction (data)
 
-#define MAXROWS      64   // Still figuring these out...
-#define MAXCOLS     240   // Still figuring these out...
+#define MAXROWS     128
+#define MAXCOLS     160
 
 // Pin mappings for Mega2560
-#define PIN_SCLK  30  // SCLK signal (SPI uses SCK  on pin 52)
-#define PIN_SDIN  31  // SDIN signal (SPI uses MOSI on pin 51)
-#define PIN_RS    32  // RS (D/C) signal (can be tied low for 3-wire SPI)
-#define PIN_CS    33  // /CS signal (certain SPI can use pin 53)
-                      // (can be tied low with a single display)
-#define PIN_RES   34  // /RES signal
+#define PIN_SCLK     52  // SCLK signal (SPI uses SCK  on pin 52)
+#define PIN_SDIN     51  // SDIN signal (SPI uses MOSI on pin 51)
+#define PIN_RS       32  // RS (D/C) signal (can be tied low for 3-wire SPI)
+#define PIN_CS       33  // /CS signal (certain SPI can use pin 53)
+                         // (can be tied low with a single display)
+#define PIN_RES      34  // /RES signal
 
 int SIG_MODE = MODE_4WIRE;
-//int SIG_MODE = MODE_3WIRE;
-//int SIG_MODE = MODE_SPI4W;
+//int SIG_MODE = MODE_SPI4W;  // can only do 16 bits color in 8-bit SPI hardware
+                            // Strangely noisy at any frequency! ???
 
 //--------------------------------------------------------------------------
 //##########################################################################
@@ -88,9 +88,10 @@ void InitStructsAndPins()
 //--------------------------------------------------------------------------
 //##########################################################################
 //--------------------------------------------------------------------------
-void displaySend(uint8_t sendType, unsigned char v)
+void displaySend(uint8_t sendType, uint32_t v, bool relCS = true, uint8_t numBits = 8)
 {
   unsigned char i;
+  uint32_t mask = 1<<(numBits-1);
 
   digitalPinSetVal(&IOMAP_CS, LOW);
 
@@ -123,10 +124,10 @@ void displaySend(uint8_t sendType, unsigned char v)
 
   if (SIG_MODE == MODE_3WIRE || SIG_MODE == MODE_4WIRE)
   {
-    for(i=8;i>0;i--)
+    for(i=numBits;i>0;i--)
     { // Decrementing is faster
       digitalPinSetVal(&IOMAP_SCLK, LOW);
-      if((v&0x80)>>7==1)
+      if((v&mask)>>(numBits-1)==1)
       {
         digitalPinSetVal(&IOMAP_SDIN, HIGH);
       }
@@ -141,42 +142,49 @@ void displaySend(uint8_t sendType, unsigned char v)
   else if (SIG_MODE == MODE_SPI4W) {
     SPI.transfer(v);
   }
-
-  digitalPinSetVal(&IOMAP_CS, HIGH);
+  
+  if (relCS) {
+    digitalPinSetVal(&IOMAP_CS, HIGH);
+  }
 }
 
 //--------------------------------------------------------------------------
 void Set_Column_Address(unsigned char a, unsigned char b)
 {
-  displaySend(SEND_CMD, 0x15); // Set Column Address
+  displaySend(SEND_CMD, 0x17); // Set Column Address
   displaySend(SEND_DAT, a);    //   Default => 0x00
+  displaySend(SEND_CMD, 0x18); // Set Column Address
   displaySend(SEND_DAT, b);    //   Default => 0x77
 }
 
 //--------------------------------------------------------------------------
 void Set_Row_Address(unsigned char a, unsigned char b)
 {
-  displaySend(SEND_CMD, 0x75); // Set Row Address
+  displaySend(SEND_CMD, 0x19); // Set Row Address
   displaySend(SEND_DAT, a);    //   Default => 0x00
+  displaySend(SEND_CMD, 0x1A); // Set Row Address
   displaySend(SEND_DAT, b);    //   Default => 0x7F
 }
 
 //--------------------------------------------------------------------------
 void Set_Write_RAM()
 {
-  displaySend(SEND_CMD, 0x5C); // Enable MCU to Write into RAM
+  displaySend(SEND_CMD, 0x22, false); // Enable MCU to Write into RAM
 }
 
 //--------------------------------------------------------------------------
 void Reset_Device()
 {
+  digitalPinSetVal(&IOMAP_RES, HIGH);
+  delay(100);
+
   // Directly from the specs
   displaySend(SEND_CMD, 0x04); // 
   displaySend(SEND_DAT, 0x03); // = 
   delay(2);
 
   displaySend(SEND_CMD, 0x04); // 
-  displaySend(SEND_DAT, 0x00); // = 
+  displaySend(SEND_DAT, 0x04); // = orig = 0x00 (0x04 saves power)
   delay(2);
 
   displaySend(SEND_CMD, 0x3B); // 
@@ -213,12 +221,12 @@ void Reset_Device()
   displaySend(SEND_DAT, 0x46); // = 
 
   displaySend(SEND_CMD, 0x13); // 
-  displaySend(SEND_DAT, 0x0A); // = 
+  displaySend(SEND_DAT, 0x00); // = orig 0x0A - BIG difference!
 
   displaySend(SEND_CMD, 0x14); // 
-  displaySend(SEND_DAT, 0x01); // = 
+  displaySend(SEND_DAT, 0x01); // = orig 0x01 - appears irrelevant in 4-wire mode
   displaySend(SEND_CMD, 0x16); // 
-  displaySend(SEND_DAT, 0x76); // = 
+  displaySend(SEND_DAT, 0x66); // = orig 0x76 = 3-bytes 262K colors, 0x66 = 2-bytes (65K colors)
 
   displaySend(SEND_CMD, 0x20); // 
   displaySend(SEND_DAT, 0x00); // = 
@@ -244,102 +252,33 @@ void Reset_Device()
 }
 
 //--------------------------------------------------------------------------
-void ClearDisplay()
+void Example1()
 {
   unsigned int i, j;
   
-  // Turn off display while clearing (also hides noise at powerup)
-  displaySend(SEND_CMD, 0xA4); // Set Display Mode = OFF
-
-  Set_Column_Address(0x00,0x77);
+  Set_Column_Address(0x00,0x9F);
   Set_Row_Address(0x00,0x7F);
   Set_Write_RAM();
-
-  for(i=0;i<MAXROWS;i++)
-  {
-    for(j=0;j<MAXCOLS/2;j++)
-    {
-      displaySend(SEND_DAT, 0x00);
-      displaySend(SEND_DAT, 0x00);
-    }
-    for(j=0;j<MAXCOLS/2;j++)
-    {
-      displaySend(SEND_DAT, 0x00);
-      displaySend(SEND_DAT, 0x00);
-    }
-  }
-
-  displaySend(SEND_CMD, 0xA6); // Set Display Mode = Normal Display
-}
-
-//--------------------------------------------------------------------------
-void FillDisplay()
-{
-  unsigned int i, j;
+  static uint32_t color;
+  color = random(0x0FFFFL+1);
+  Serial.println();
   
-  Set_Column_Address(0x00,0x77);
-  Set_Row_Address(0x00,0x7F);
-  Set_Write_RAM();
-
   for(i=0;i<MAXROWS;i++)
   {
-    for(j=0;j<MAXCOLS/2;j++)
+    for(j=0;j<MAXCOLS;j++)
     {
-      displaySend(SEND_DAT, 0xFF);
-      displaySend(SEND_DAT, 0xFF);
-    }
-    for(j=0;j<MAXCOLS/2;j++)
-    {
-      displaySend(SEND_DAT, 0xFF);
-      displaySend(SEND_DAT, 0xFF);
-    }
-  }
-}
-
-//--------------------------------------------------------------------------
-void CheckerboardOdd()
-{
-  unsigned int i, j;
-  
-  Set_Column_Address(0x00,0x77);
-  Set_Row_Address(0x00,0x7F);
-  Set_Write_RAM();
-
-  for(i=0;i<MAXROWS;i++)
-  {
-    for(j=0;j<MAXCOLS/2;j++)
-    {
-      displaySend(SEND_DAT, 0x0F);
-      displaySend(SEND_DAT, 0x0F);
-    }
-    for(j=0;j<MAXCOLS/2;j++)
-    {
-      displaySend(SEND_DAT, 0xF0);
-      displaySend(SEND_DAT, 0xF0);
-    }
-  }
-}
-
-//--------------------------------------------------------------------------
-void CheckerboardEven()
-{
-  unsigned int i, j;
-  
-  Set_Column_Address(0x00,0x77);
-  Set_Row_Address(0x00,0x7F);
-  Set_Write_RAM();
-
-  for(i=0;i<MAXROWS;i++)
-  {
-    for(j=0;j<MAXCOLS/2;j++)
-    {
-      displaySend(SEND_DAT, 0xF0);
-      displaySend(SEND_DAT, 0xF0);
-    }
-    for(j=0;j<MAXCOLS/2;j++)
-    {
-      displaySend(SEND_DAT, 0x0F);
-      displaySend(SEND_DAT, 0x0F);
+      if (1) {
+        //displaySend(SEND_DAT, (color&0x30000)>>16, true); // can't seem to do 3-byte colors
+        displaySend(SEND_DAT, (color&0x0FF00)>> 8, true);
+        displaySend(SEND_DAT, (color&0x000FF)>> 0, true);
+      }
+      else {
+        // none of these works right:
+//        displaySend(SEND_DAT, color, true, 16);
+//        displaySend(SEND_DAT, (color&0x30000)>>16, false, 2);
+//        displaySend(SEND_DAT, (color&0x0FF00)>> 8, false);
+//        displaySend(SEND_DAT, (color&0x000FF)>> 0, true);
+      }
     }
   }
 }
@@ -349,10 +288,8 @@ void CheckerboardEven()
 //--------------------------------------------------------------------------
 void setup()
 {
+  //Serial.begin (115200);
   InitStructsAndPins();
-  digitalPinSetVal(&IOMAP_RS,  LOW);
-  digitalPinSetVal(&IOMAP_RES, HIGH);
-  delay(1000);
   if (SIG_MODE == MODE_SPI4W) {
     SPI.begin();
     SPI.setBitOrder(MSBFIRST);
@@ -365,13 +302,16 @@ void setup()
 //--------------------------------------------------------------------------
 void loop()
 { 
-    //displaySend(SEND_CMD, 0xA4); // Entire Display OFF, all pixels turns OFF in GS level 0
-    //displaySend(SEND_CMD, 0xA5); // Entire Display ON, all pixels turns ON in GS level 15
-    //ClearDisplay();
-    //CheckerboardOdd();
-    //CheckerboardEven();
-    //FillDisplay();
-    delay(1000);
+//  displaySend(SEND_CMD, 0x06); // 
+//  displaySend(SEND_DAT, 0x01); // = 
+
+  Example1();
+
+//  delay(1000);
+//  displaySend(SEND_CMD, 0x06); // 
+//  displaySend(SEND_DAT, 0x00); // = 
+//  delay(2000);
+  //Reset_Device();
 }
 
 //--------------------------------------------------------------------------
