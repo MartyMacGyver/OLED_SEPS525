@@ -4,7 +4,9 @@ Another display in my collection is a [Newhaven NHD-1.69-160128UGC3 RGB OLED dis
 
 ## Work in progress
 
-This device doesn't support 3-Wire as far as I can tell. 4-Wire (software) should be possible, but 16-bit hardware SPI is not possible on the Mega.
+Progress - "It aten't dead!" (with apologies to Pratchett) - I implemented the reset code from the specs and it lit right up!
+
+This device doesn't support 3-Wire as far as I can tell. 4-Wire (software) works, but 16-bit SPI in hardware is not possible on the Mega.
 
 This *should* work for various SEPS525 displays (e.g., others in the Newhaven series using this chipset).
 
