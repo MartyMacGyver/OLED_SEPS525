@@ -8,7 +8,7 @@ This *should* work for various SEPS525 displays (e.g., others in the Newhaven se
 
 Setup: I used an Arduino Mega 2560 with the latest Arduino 1.5.8 IDE. I used a 74LVC245 for voltage translaton. The display was wired per the serial specs for it, with the level shifted Arduino pins going to the corresponding board pins. The reference voltage for the '245 and the display was 3.3V. (Never apply 5V directly to this display!)
 
-Hardware note: For some reason the CS line on mine was very susceptible to noise... touching my finger to it and a few nearby pins seemed to make the problem go away - a tiny 10 pF cap between the CS line (after the level shifter) and ground cleared that problem up. (This didn't happen with my SSD1322 device.)
+Hardware note: The CS line is *particularly* susceptible to noise in hardware SPI mode... ~~touching my finger to it and a few nearby pins seemed to make the problem go away - a tiny 10 pF cap between the CS line (after the level shifter) and ground cleared that problem up.~~ (This didn't happen with my SSD1322 device.) However, I didn't ground every single unused line and it turns out pin 11 (D15) and pin 12 (D16) are really noisy during hardware SPI writes (no idea why they aren't as noisy during bit-banged SPI). Grounding pin 11 and pin 12 (and at least one of the main grounds like pin 1) makes this display work even when the pins are touched (no extra capacitor necessay).
 
 **Further reading:**
 
