@@ -32,15 +32,15 @@ http://www.newhavendisplay.com/NHD_forum/index.php/topic,64.0.html
 #define MAXCOLS     160
 
 // Pin mappings for Mega2560
-#define PIN_SCLK     52  // SCLK signal (SPI uses SCK  on pin 52)
-#define PIN_SDIN     51  // SDIN signal (SPI uses MOSI on pin 51)
+#define PIN_SCLK     30  // SCLK signal (SPI uses SCK  on pin 52)
+#define PIN_SDIN     31  // SDIN signal (SPI uses MOSI on pin 51)
 #define PIN_RS       32  // RS (D/C) signal (can be tied low for 3-wire SPI)
 #define PIN_CS       33  // /CS signal (certain SPI can use pin 53)
                          // (can be tied low with a single display)
 #define PIN_RES      34  // /RES signal
 
-int SIG_MODE = MODE_4WIRE;
-//int SIG_MODE = MODE_SPI4W;  // can only do 16 bits color in 8-bit SPI hardware
+//int SIG_MODE = MODE_4WIRE;
+int SIG_MODE = MODE_SPI4W;  // can only do 16 bits color in 8-bit SPI hardware
                             // Strangely noisy at any frequency! ???
 
 //--------------------------------------------------------------------------
@@ -260,8 +260,7 @@ void Example1()
   Set_Row_Address(0x00,0x7F);
   Set_Write_RAM();
   static uint32_t color;
-  color = random(0x0FFFFL+1);
-  Serial.println();
+  color = random(0x3FFFFL+1);
   
   for(i=0;i<MAXROWS;i++)
   {
@@ -288,12 +287,11 @@ void Example1()
 //--------------------------------------------------------------------------
 void setup()
 {
-  //Serial.begin (115200);
   InitStructsAndPins();
   if (SIG_MODE == MODE_SPI4W) {
     SPI.begin();
     SPI.setBitOrder(MSBFIRST);
-    SPI.setClockDivider(SPI_CLOCK_DIV2);
+    SPI.setClockDivider(SPI_CLOCK_DIV4);
     // DIV4 is almost as fast (for a 16 MHz device)
   }
   Reset_Device();
@@ -302,16 +300,7 @@ void setup()
 //--------------------------------------------------------------------------
 void loop()
 { 
-//  displaySend(SEND_CMD, 0x06); // 
-//  displaySend(SEND_DAT, 0x01); // = 
-
   Example1();
-
-//  delay(1000);
-//  displaySend(SEND_CMD, 0x06); // 
-//  displaySend(SEND_DAT, 0x00); // = 
-//  delay(2000);
-  //Reset_Device();
 }
 
 //--------------------------------------------------------------------------
