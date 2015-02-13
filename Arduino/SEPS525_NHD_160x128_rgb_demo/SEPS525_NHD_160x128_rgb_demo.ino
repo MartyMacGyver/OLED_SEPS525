@@ -148,23 +148,31 @@ void displaySend(uint8_t sendType, uint32_t v, bool relCS = true, uint8_t numBit
 }
 
 //--------------------------------------------------------------------------
-void Set_Column_Address(unsigned char a, unsigned char b)
+void Set_Column_Address(uint16_t a, uint16_t b)
 {
-  displaySend(SEND_CMD, 0x17); // Set Column Address
+  displaySend(SEND_CMD, 0x17); // Set Column Min
   displaySend(SEND_DAT, a);    //   Default => 0x00
-  displaySend(SEND_CMD, 0x18); // Set Column Address
-  displaySend(SEND_DAT, b);    //   Default => 0x77
+  displaySend(SEND_CMD, 0x18); // Set Column Max
+  displaySend(SEND_DAT, b);    //   Default => 0x9F
 }
 
 //--------------------------------------------------------------------------
-void Set_Row_Address(unsigned char a, unsigned char b)
+void Set_Row_Address(uint16_t a, uint16_t b)
 {
-  displaySend(SEND_CMD, 0x19); // Set Row Address
+  displaySend(SEND_CMD, 0x19); // Set Row Min
   displaySend(SEND_DAT, a);    //   Default => 0x00
-  displaySend(SEND_CMD, 0x1A); // Set Row Address
+  displaySend(SEND_CMD, 0x1A); // Set Row Max
   displaySend(SEND_DAT, b);    //   Default => 0x7F
 }
 
+//--------------------------------------------------------------------------
+void Set_Memory_Access_Pointer(uint16_t a, uint16_t b)
+{
+  displaySend(SEND_CMD, 0x20); // Set Column Ptr
+  displaySend(SEND_DAT, a);    //   Default => 0x00
+  displaySend(SEND_CMD, 0x21); // Set Row Ptr
+  displaySend(SEND_DAT, b);    //   Default => 0x00
+}
 //--------------------------------------------------------------------------
 void Set_Write_RAM()
 {
@@ -251,34 +259,64 @@ void Reset_Device()
 }
 
 //--------------------------------------------------------------------------
-void Example1()
+void DrawRandomRect()
 {
-  unsigned int i, j;
-  
-  Set_Column_Address(0x00,0x9F);
-  Set_Row_Address(0x00,0x7F);
+  uint16_t colMin = random(0,      MAXCOLS);
+  uint16_t colMax = random(colMin, MAXCOLS);
+  uint16_t rowMin = random(0,      MAXROWS);
+  uint16_t rowMax = random(rowMin, MAXROWS);
+  uint32_t color  = random(0x3FFFFL+1);
+  DrawRect(color, colMin, colMax, rowMin, rowMax);
+}
+
+//--------------------------------------------------------------------------
+void DrawRandomDot()
+{
+  uint16_t colMin = random(0,      MAXCOLS);
+  uint16_t colMax = colMin;
+  uint16_t rowMin = random(0,      MAXROWS);
+  uint16_t rowMax = rowMin;
+  uint32_t color  = random(0x3FFFFL+1);
+  DrawRect(color, colMin, colMax, rowMin, rowMax);
+}
+
+//--------------------------------------------------------------------------
+void DrawRect(uint32_t color, uint16_t colMin, uint16_t colMax, uint16_t rowMin, uint16_t rowMax)
+{
+  Serial.print(colMin);
+  Serial.print(", ");
+  Serial.print(colMax);
+  Serial.print("    ");
+  Serial.print(rowMin);
+  Serial.print(", ");
+  Serial.print(rowMax);
+  Serial.println();
+
+  Set_Column_Address(colMin,colMax);
+  Set_Row_Address(rowMin,rowMax);
+  Set_Memory_Access_Pointer(colMin,rowMin);
   Set_Write_RAM();
-  static uint32_t color;
-  color = random(0x3FFFFL+1);
-  
-  for(i=0;i<MAXROWS;i++)
+
+  uint16_t i, j;
+  for(i=0;i<=(rowMax-rowMin);i++) // decrementing didn't make a huge difference
   {
-    for(j=0;j<MAXCOLS;j++)
+    for(j=0;j<=(colMax-colMin);j++)
     {
       if (1) {
         //displaySend(SEND_DAT, (color&0x30000)>>16, true); // can't seem to do 3-byte colors
-        displaySend(SEND_DAT, (color&0x0FF00)>> 8, true);
+        displaySend(SEND_DAT, (color&0x0FF00)>> 8, false);
         displaySend(SEND_DAT, (color&0x000FF)>> 0, true);
       }
       else {
         // none of these works right:
-//        displaySend(SEND_DAT, color, true, 16);
-//        displaySend(SEND_DAT, (color&0x30000)>>16, false, 2);
-//        displaySend(SEND_DAT, (color&0x0FF00)>> 8, false);
-//        displaySend(SEND_DAT, (color&0x000FF)>> 0, true);
+        // displaySend(SEND_DAT, color, true, 16);
+        // displaySend(SEND_DAT, (color&0x30000)>>16, false, 2);
+        // displaySend(SEND_DAT, (color&0x0FF00)>> 8, false);
+        // displaySend(SEND_DAT, (color&0x000FF)>> 0, true);
       }
     }
   }
+  //digitalPinSetVal(&IOMAP_CS, HIGH);
 }
 
 //--------------------------------------------------------------------------
@@ -286,6 +324,7 @@ void Example1()
 //--------------------------------------------------------------------------
 void setup()
 {
+  Serial.begin(115600);
   InitStructsAndPins();
   if (SIG_MODE == MODE_SPI4W) {
     SPI.begin();
@@ -299,7 +338,20 @@ void setup()
 //--------------------------------------------------------------------------
 void loop()
 { 
-  Example1();
+  DrawRect(0x000000L, 0, MAXCOLS-1, 0, MAXROWS-1);
+  delay(500);
+  for (int i = 0; i < 0x00FF; i++) {
+    DrawRandomRect();
+  }
+  delay(1000);
+
+  DrawRect(0x000000L, 0, MAXCOLS-1, 0, MAXROWS-1);
+  delay(500);
+  for (int i = 0; i < 0x1FFF; i++) {
+    DrawRandomDot();
+  }
+  delay(1000);
+  
 }
 
 //--------------------------------------------------------------------------
