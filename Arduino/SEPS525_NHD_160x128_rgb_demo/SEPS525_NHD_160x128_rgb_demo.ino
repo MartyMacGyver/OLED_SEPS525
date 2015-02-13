@@ -41,7 +41,6 @@ http://www.newhavendisplay.com/NHD_forum/index.php/topic,64.0.html
 
 //int SIG_MODE = MODE_4WIRE;
 int SIG_MODE = MODE_SPI4W;  // can only do 16 bits color in 8-bit SPI hardware
-                            // Strangely noisy at any frequency! ???
 
 //--------------------------------------------------------------------------
 //##########################################################################
