@@ -15,3 +15,5 @@ Hardware note: The CS line is *particularly* susceptible to noise in hardware SP
 Specifications: http://www.newhavendisplay.com/specs/NHD-1.69-160128UGC3.pdf
 
 Chipset app notes: http://www.newhavendisplay.com/app_notes/SEPS525.pdf
+
+A grateful nod to [Tomaž Šolc's OLED library](https://github.com/avian2/SEPS525-OLED-Library), particularly for helping me understand some of the esoteric settings this display uses (that aren't documented well in the data sheets).
