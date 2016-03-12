@@ -1,6 +1,6 @@
 # Driving OLEDs based on the SEPS525 chipset
 
-Another display in my collection is a [Newhaven NHD-1.69-160128UGC3 RGB OLED display](http://www.newhavendisplay.com/nhd169160128ugc3-p-5603.html). I'm basing this work on (my SSD1322 project](https://github.com/MartyMacGyver/OLED_SSD1322).
+Another display in my collection is a [Newhaven NHD-1.69-160128UGC3 RGB OLED display](http://www.newhavendisplay.com/nhd169160128ugc3-p-5603.html). I'm basing this work on [my SSD1322 project](https://github.com/MartyMacGyver/OLED_SSD1322).
 
 4-Wire SPI (software and 8-bit HW) works, but non-8-bit SPI in hardware is not possible on the Mega and this chipset doesn't support 3-Wire SPI. 16 bit color works but 18 bit doesn't.
 
