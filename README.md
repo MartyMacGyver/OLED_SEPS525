@@ -12,9 +12,12 @@ Hardware note: The CS line is *particularly* susceptible to noise in hardware SP
 
 Update: The best option is to just ground all the unused pins.
 
+I recently got a [Newhaven NHD-1.69-160128ASC3 RGB OLED display](http://www.newhavendisplay.com/nhd169160128asc3-p-9288.html) to try out with my Particle Photon - it worked rather painlessly, despite foregoing the Arduino optimizations in the initial iteration. I prefer this board - it's far more robust in this sort of environment and is better engineered for a hobbyist.
+
 **Further reading:**
 
 Specifications: http://www.newhavendisplay.com/specs/NHD-1.69-160128UGC3.pdf
+Specifications: http://www.newhavendisplay.com/specs/NHD-1.69-160128ASC3.pdf
 
 Chipset app notes: http://www.newhavendisplay.com/app_notes/SEPS525.pdf
 
