@@ -32,11 +32,11 @@ http://www.newhavendisplay.com/NHD_forum/index.php/topic,64.0.html
 #define MAXCOLS     160
 
 // Pin mappings for Mega2560
-#define PIN_SCLK     A3  // SCLK signal
 #define PIN_SDIN     A5  // SDIN signal
+#define PIN_RES      A4  // /RES signal
+#define PIN_SCLK     A3  // SCLK signal
 #define PIN_RS       A2  // RS (D/C) signal (can be tied low for 3-wire SPI)
-#define PIN_CS       A0  // /CS signal (can be tied low with a single display)
-#define PIN_RES      A1  // /RES signal
+#define PIN_CS       A1  // /CS signal (can be tied low with a single display)
 
 int SIG_MODE = MODE_SPI4W;  // can only do 16 bits color in 8-bit SPI hardware
 
